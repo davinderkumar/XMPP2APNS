@@ -7,11 +7,11 @@
     <class>org.jivesoftware.openfire.plugin.xmpp2apns</class>
     <name>XMPP2APNS</name>
     <description>Forward Message to Apple Push Notification Service.</description>
-    <author>Chul-won Kim</author>
-    <version>0.1</version>
-    <date>9/29/2011</date>
-    <url>http://www.myriky.net</url>
-    <minServerVersion>3.5.0</minServerVersion>
+    <author>Davinder Kumar Meen</author>
+    <version>0.2</version>
+    <date>03/03/2014</date>
+    <url>http://www.impingesolutions.com</url>
+    <minServerVersion>3.6.0</minServerVersion>
     <databaseKey>xmpp2apns</databaseKey>
     <databaseVersion>0</databaseVersion>
 </plugin>

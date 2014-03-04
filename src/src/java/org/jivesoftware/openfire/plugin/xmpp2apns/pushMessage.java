@@ -1,6 +1,8 @@
 package org.jivesoftware.openfire.plugin;
 
 import javapns.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class pushMessage extends Thread {
 
@@ -11,6 +13,8 @@ class pushMessage extends Thread {
 	String password;
 	boolean production;
 	String token;
+	
+	private static final Logger Log = LoggerFactory.getLogger(xmpp2apns.class); 
 	
 	pushMessage(String message, int badge, String sound, Object keystore, String password, boolean production, String token ) {
 
@@ -25,7 +29,11 @@ class pushMessage extends Thread {
 	}
 
 	public void run() {
-		Push.combined(message, badge, sound, keystore, password, production, token);
+		try {
+			Push.combined(message, badge, sound, keystore, password, production, token);
+		} catch (Exception e){
+			Log.error(e.getMessage(), "");
+		} 
 	}
 
 }

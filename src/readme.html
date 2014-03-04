@@ -2,7 +2,7 @@
 
 <html>
 <head>
-	<title>Email Listener Plugin Readme</title>
+	<title>XMPP2APNS Listener Plugin Readme</title>
     <style type="text/css">
         BODY {
             font-size : 100%;
@@ -51,37 +51,70 @@
 <body>
 
 <h1>
-Email Listener Plugin Readme
+XMPP2APNS Plugin Readme
 </h1>
 
 <h2>Overview</h2>
 
 <p>
-The email listener plugin is a service that connects to an email server using IMAP and
-forwards new email messages to specified users.
+This plugin is to send APNS notifications to Apple Devices.
 </p>
 
 <h2>Installation</h2>
 
-<p>Copy emailListener.jar into the plugins directory of your Openfire installation. The
-plugin will then be automatically deployed. To upgrade to a new version, copy the new
-emailListener.jar file over the existing file or upgrade from the admin console.</p>
+<p>Login into OpenFire Admin, go to "Plugins" and select xmpp2apns.jar file
+upload plugin section. If plugin is already installed then uninstall it first.<br>
+
+As soon as the plug-in is installed , the database will automatically generate a table called ofAPNS .<br>
+
+And, copy the P12 certificate file from APNS to /usr/local/openfire.<br>
+</p>
 
 <h2>Configuration</h2>
 
-The email listener plugin can be configured via the Openfire Admin Console.
-Use the configuration page to specify the email server and user to use to
-connect to the server. The list of users to notify of new email messages should be
-comma delimited and the bare JID (e.g. john@server.com) should be used. Once the
-service has been configued it will automatically connect and start monitoring for new
-email messages.
+No configuration required.
 
 <h2>Using the Plugin</h2>
 
-Once Openfire is started the plugin will connect to the email server and start to monitor
-for new email messages. New email message will be sent to specified users. Every time the
-configuration of the email listener service is updated the service will be automatically
-restarted. 
-
+Openfire forwards messages to this plugin which are forwarded to APNS (Apple Push Notification Server).
+<br>
+Here are IQ request formats
+<br>
+<u>Register device token</u><br>
+<br>
+&lt;iq type="set" to="OPENFIRE_SERVER" id="apns68057d6a"&gt;<br>
+&lt;query xmlns="urn:xmpp:apns"&gt;<br>
+&lt;token&gt; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX &lt;/ token&gt;<br>
+&lt;/ query&gt;<br>
+&lt;/ iq&gt;<br>
+<br>
+The return value
+<br>
+&lt;iq type="result" id="OPENFIRE_SERVER" from="210.205.58.23" to="user@OPENFIRE_SERVER/68057d6a"&gt;<br>
+&lt;query xmlns="urn:xmpp:apns"&gt;<br>
+&lt;token&gt; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX &lt;/ token&gt;<br>
+&lt;/ query&gt;<br>
+&lt;/ iq&gt;<br>
+<br>
+<u>Get device token</u><br>
+<br>
+&lt;iq type="get" to="OPENFIRE_SERVER" id="apns68057d6a"&gt;<br>
+        &lt;query xmlns="urn:xmpp:apns"/&gt;<br>
+&lt;/ iq&gt;<br>
+<br>
+The return value<br>
+<br>
+&lt;iq type="result" id="apns68057d6a" from="OPENFIRE_SERVER" to="user@OPENFIRE_SERVER/68057d6a"&gt;<br>
+&lt;query xmlns="urn:xmpp:apns"&gt;<br>
+&lt;token&gt; XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX &lt;/ token&gt;<br>
+&lt;/ query&gt;<br>
+&lt;/ iq&gt;<br>
+<br>
+<h2>See Also</h2>
+<br>
+The module that the request from the APNS Openfire ('Javapns' http://code.google.com/p/javapns/) using October
+<br>
+Openfire plugins are compiled to create a jar package (http://community.igniterealtime.org/docs/DOC-1020) for reference.
+<br>
 </body>
 </html>

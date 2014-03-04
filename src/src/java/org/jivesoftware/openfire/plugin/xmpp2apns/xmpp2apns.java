@@ -4,6 +4,7 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.*;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 
+import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.MessageRouter;
 import org.jivesoftware.openfire.XMPPServer;
 import org.jivesoftware.openfire.container.Plugin;
@@ -14,6 +15,12 @@ import org.jivesoftware.openfire.IQRouter;
 import org.jivesoftware.openfire.interceptor.InterceptorManager;
 import org.jivesoftware.openfire.interceptor.PacketInterceptor;
 import org.jivesoftware.openfire.interceptor.PacketRejectedException;
+import org.jivesoftware.openfire.vcard.VCardManager;
+import org.dom4j.Element;
+import org.jivesoftware.openfire.PresenceManager;
+import org.jivesoftware.openfire.user.UserManager;
+import org.jivesoftware.openfire.user.User;
+import org.jivesoftware.openfire.user.UserNotFoundException;
 
 import org.jivesoftware.database.DbConnectionManager;
 import org.jivesoftware.database.SequenceManager;
@@ -38,22 +45,36 @@ public class xmpp2apns implements Plugin, PacketInterceptor {
     
     private xmpp2apnsDBHandler dbManager;
     
+    private VCardManager vcardManager;
+    
+    private UserManager userManager;
+    
+    private PresenceManager presenceManager;
+    
+    private XMPPServer server;
+    
     public xmpp2apns() {
         interceptorManager = InterceptorManager.getInstance();
         dbManager = new xmpp2apnsDBHandler();       
     }
     
 	public void initializePlugin(PluginManager pManager, File pluginDirectory) {		
-        // 메시지를 가로채기 위한 인터셉터 매니저 등록
+
         interceptorManager.addInterceptor(this);
-        
+        server = XMPPServer.getInstance();
+        presenceManager = server.getPresenceManager();
+        vcardManager = VCardManager.getInstance();
+        userManager = server.getUserManager();
         IQHandler myHandler = new xmpp2apnsIQHandler();
-        IQRouter iqRouter = XMPPServer.getInstance().getIQRouter();       
+        IQRouter iqRouter = server.getIQRouter();       
         iqRouter.addHandler(myHandler);
     }
 	
 	public void destroyPlugin() {
-        // 인터셉터 매니저 해제
+        presenceManager= null;
+        vcardManager = null;
+        userManager =null;
+        server = null;
         interceptorManager.removeInterceptor(this);
     }
 	
@@ -67,22 +88,48 @@ public class xmpp2apns implements Plugin, PacketInterceptor {
 				
 				JID targetJID = receivedMessage.getTo();
 				
-				String targetJID_Bare = targetJID.toBareJID();				
-				String body = receivedMessage.getBody();
-			
-				String[] userID = targetJID_Bare.split("@");
-				if( userID[0] == null ) userID[0] = "누군가";
-				
-				String payloadString = userID[0];
-				payloadString = payloadString.concat(": ");
-				payloadString = payloadString.concat(body);
+				User user = null;
+				try{
+					user = userManager.getUser(targetJID.getNode());
+				} catch(UserNotFoundException unf){
+					Log.error(unf.getMessage(), "");
+				}
+				if ( user != null && presenceManager.isAvailable(user)) {
+					//Log.error("User "+targetJID.toBareJID()+" is online", "");
+					return;
+				}
 				
 				String deviceToken = dbManager.getDeviceToken(targetJID);
 				if(deviceToken == null) return;
+								
+				String body = receivedMessage.getBody();
+				if ( body == null ) return; 
 				
-				pushMessage message = new pushMessage(payloadString, 1, "Default.caf", "/usr/local/openfire/directxmpp.p12", "123789", false, deviceToken);
-				message.start();
+				JID fromJID = receivedMessage.getFrom();
+				String fromBareId = fromJID.toBareJID();
+				String[] userID = fromBareId.split("@");
 				
+				String username;
+				if( userID[0] == null ) { 
+					username = new String("-");
+				} else {
+					username = new String(userID[0]);
+				}
+				
+				String nickName = vcardManager.getVCardProperty(username, "NICKNAME");
+				if (nickName == null) {
+					nickName = username;
+				}
+				
+				String payloadString = nickName;
+				payloadString = payloadString.concat(": ");
+				payloadString = payloadString.concat(body);
+
+				//Log.error("Sending =>"+ payloadString+"to"+deviceToken, "");
+				
+				pushMessage message = new pushMessage(payloadString, -1, "default", "/usr/local/openfire/directxmpp.p12", "123789", true, deviceToken);
+
+				message.start();		
 			}			
 			
 		}	
